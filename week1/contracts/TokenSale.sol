@@ -9,6 +9,7 @@ contract TokenSale is ERC20 {
     using SafeERC20 for IERC20;
 
     error InvalidIntegral();
+    error NotEvenNumber();
     error FreezeTime();
 
     uint256 public constant SLOPE = 1;
@@ -26,6 +27,11 @@ contract TokenSale is ERC20 {
         baseToken = baseToken_;
     }
 
+    modifier evenCheck(uint256 amount) {
+        if (amount % 2 != 0) revert NotEvenNumber();
+        _;
+    }
+
     modifier freezeCheck() {
         address sender = _msgSender();
         if (block.timestamp - lastAction[sender] < FREEZE_TIME) revert FreezeTime();
@@ -33,7 +39,7 @@ contract TokenSale is ERC20 {
         _;
     }
 
-    function buy(uint256 amount) external freezeCheck {
+    function buy(uint256 amount) external freezeCheck evenCheck(amount) {
         uint256 priceChange = onBuyPriceChange(amount);
 
         address minter = _msgSender();
@@ -43,7 +49,7 @@ contract TokenSale is ERC20 {
         baseToken.safeTransferFrom(minter, address(this), priceChange);
     }
 
-    function sell(uint256 amount) external freezeCheck {
+    function sell(uint256 amount) external freezeCheck evenCheck(amount) {
         uint256 priceChange = onSellPriceChange(amount);
 
         address burner = _msgSender();
