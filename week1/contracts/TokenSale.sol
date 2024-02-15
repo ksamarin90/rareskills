@@ -34,9 +34,7 @@ contract TokenSale is ERC20 {
     }
 
     function buy(uint256 amount) external freezeCheck {
-        uint256 currentSupply = totalSupply();
-        uint256 newSupply = currentSupply + amount;
-        uint256 priceChange = _calculateLinearIntegral(currentSupply, newSupply);
+        uint256 priceChange = onBuyPriceChange(amount);
 
         address minter = _msgSender();
 
@@ -46,15 +44,27 @@ contract TokenSale is ERC20 {
     }
 
     function sell(uint256 amount) external freezeCheck {
-        uint256 currentSupply = totalSupply();
-        uint256 newSupply = currentSupply - amount;
-        uint256 priceChange = _calculateLinearIntegral(newSupply, currentSupply);
+        uint256 priceChange = onSellPriceChange(amount);
 
         address burner = _msgSender();
 
         _burn(burner, amount);
 
         baseToken.safeTransfer(burner, priceChange);
+    }
+
+    function onBuyPriceChange(uint256 amount) public view returns (uint256) {
+        uint256 currentSupply = totalSupply();
+        uint256 newSupply = currentSupply + amount;
+        uint256 priceChange = _calculateLinearIntegral(currentSupply, newSupply);
+        return priceChange;
+    }
+
+    function onSellPriceChange(uint256 amount) public view returns (uint256) {
+        uint256 currentSupply = totalSupply();
+        uint256 newSupply = currentSupply - amount;
+        uint256 priceChange = _calculateLinearIntegral(newSupply, currentSupply);
+        return priceChange;
     }
 
     function _calculateLinearIntegral(uint256 from, uint256 to) internal pure returns (uint256) {

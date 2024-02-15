@@ -38,35 +38,22 @@ describe('TokenSale', () => {
             await baseToken.connect(user).approve(tokenSale.getAddress(), ethers.MaxUint256);
         }
         await tokenSale.connect(user1).buy(1000);
-
-        await baseToken.balanceOf(user1.address).then(console.log);
-        await tokenSale.balanceOf(user1.address).then(console.log);
-
         await tokenSale.connect(user2).buy(1000);
-
-        await baseToken.balanceOf(user2.address).then(console.log);
-        await tokenSale.balanceOf(user2.address).then(console.log);
-
         await tokenSale.connect(user3).buy(1000);
 
-        await baseToken.balanceOf(user3.address).then(console.log);
-        await tokenSale.balanceOf(user3.address).then(console.log);
-
-        await time.increase(60);
+        await time.increase(await tokenSale.FREEZE_TIME());
 
         await tokenSale.connect(user1).sell(1000);
-
-        await baseToken.balanceOf(user1.address).then(console.log);
-        await tokenSale.balanceOf(user1.address).then(console.log);
-
         await tokenSale.connect(user2).sell(1000);
-
-        await baseToken.balanceOf(user2.address).then(console.log);
-        await tokenSale.balanceOf(user2.address).then(console.log);
-
         await tokenSale.connect(user3).sell(1000);
 
-        await baseToken.balanceOf(user3.address).then(console.log);
-        await tokenSale.balanceOf(user3.address).then(console.log);
+        expect(await tokenSale.totalSupply()).to.equal(0);
+        const user1Balance = await baseToken.balanceOf(user1.address);
+        const user2Balance = await baseToken.balanceOf(user2.address);
+        const user3Balance = await baseToken.balanceOf(user3.address);
+        expect(user2Balance).to.equal(amount);
+        expect(user1Balance).to.be.greaterThan(user2Balance);
+        expect(user3Balance).to.be.lessThan(user2Balance);
+        expect(user1Balance + user3Balance).to.equal(amount * 2n);
     });
 });
