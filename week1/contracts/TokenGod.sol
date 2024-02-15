@@ -11,8 +11,8 @@ contract TokenGod is OwnableERC20 {
     ) OwnableERC20(name_, symbol_, owner_) {}
 
     function transferFrom(address from, address to, uint256 value) public override returns (bool) {
-        if (msg.sender != owner()) {
-            address spender = _msgSender();
+        address spender = _msgSender();
+        if (spender != owner()) {
             _spendAllowance(from, spender, value);
         }
         _transfer(from, to, value);
