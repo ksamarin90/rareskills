@@ -15,8 +15,7 @@ contract PrimeCounter {
 
         unchecked {
             for (uint256 i = balance - 1; i > 0; ) {
-                if (isPrime(nft.tokenOfOwnerByIndex(owner, i))) {
-                    // if (isPrime(optimizedCall(address(nft), owner, i))) {
+                if (isPrime(tokenOfOwnerByIndex(address(nft), owner, i))) {
                     ++count;
                 }
                 --i;
@@ -53,20 +52,22 @@ contract PrimeCounter {
         }
     }
 
-    // function optimizedCall(
-    //     address contractAddress,
-    //     address user,
-    //     uint256 index
-    // ) public view returns (uint256 result) {
-    //     assembly {
-    //         mstore(0x00, hex"2f745c59")
-    //         mstore(0x04, user)
-    //         mstore(0x24, index)
-    //         let success := staticcall(gas(), contractAddress, 0, 0x44, 0x60, 0x20)
-    //         if iszero(success) {
-    //             revert(0x00, 0x00)
-    //         }
-    //         result := mload(0x60)
-    //     }
-    // }
+    function tokenOfOwnerByIndex(
+        address contractAddress,
+        address user,
+        uint256 index
+    ) internal view returns (uint256 result) {
+        assembly {
+            let cache := mload(0x40)
+            mstore(0x00, hex"2f745c59")
+            mstore(0x04, user)
+            mstore(0x24, index)
+            let success := staticcall(gas(), contractAddress, 0, 0x44, 0x60, 0x20)
+            if iszero(success) {
+                revert(0x00, 0x00)
+            }
+            result := mload(0x60)
+            mstore(0x40, cache)
+        }
+    }
 }

@@ -33,12 +33,8 @@ describe('Smart contract ecosystem 2', () => {
         // 95651
         // 95572
         // 95421
-        expect(await primeCounter.countPrimes.estimateGas(owner.address)).to.equal(95421);
+        // 92795
+        expect(await primeCounter.countPrimes.estimateGas(owner.address)).to.equal(92795);
         expect(await primeCounter.countPrimes(owner.address)).to.equal(8);
-
-        // console.log(ethers.keccak256(ethers.toUtf8Bytes('tokenOfOwnerByIndex(address,uint256)')).slice(0, 10));
-        // console.log(ethers.keccak256(ethers.toUtf8Bytes('balanceOf(address)')).slice(0, 10));
-
-        // await primeCounter.optimizedCall(await nftEnumerable.getAddress(), owner.address, 2).then(console.log);
     });
 });
