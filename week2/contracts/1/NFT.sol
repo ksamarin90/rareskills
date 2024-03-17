@@ -61,8 +61,6 @@ contract NFT is ERC721, ERC2981, Ownable2Step {
         _;
     }
 
-    receive() external payable {}
-
     function mint() external payable verifyMint(price) {
         _mint(msg.sender, totalSupply);
         emit Minted(msg.sender, totalSupply, false);
