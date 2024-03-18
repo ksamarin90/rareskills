@@ -9,6 +9,8 @@
     },
     "dependencies": {
         "@openzeppelin/merkle-tree": "^1.0.6",
-        "hardhat-gas-reporter": "^1.0.10"
+        "hardhat-contract-sizer": "^2.10.0",
+        "hardhat-gas-reporter": "^1.0.10",
+        "solady": "^0.0.177"
     }
 }

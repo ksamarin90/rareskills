@@ -11,4 +11,4 @@ In this way it is possible to highly customize time frames which are needed by y
 **Why are price0CumulativeLast and price1CumulativeLast stored separately? Why not just calculate `price1CumulativeLast = 1/price0CumulativeLast?**
 
 Is it much simpler to track both values and do not rely on ratio, since ratio in case of changing denominator
-would not reflect the actual price change - 1 / (2 + 3) != 1/2 + 1/3.
+would not reflect the actual price change - 1 / (2 + 3) != 1/2 + 1/3. Means, it is wrong to assume that simply flipping ratio will give the right price of another asset.

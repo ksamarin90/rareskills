@@ -1,5 +1,6 @@
 import { HardhatUserConfig } from 'hardhat/config';
 import 'hardhat-gas-reporter';
+import 'hardhat-contract-sizer';
 import '@nomicfoundation/hardhat-toolbox';
 
 export const config: HardhatUserConfig = {
