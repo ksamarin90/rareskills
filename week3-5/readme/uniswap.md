@@ -1,3 +1,6 @@
+In order to use TWAP oracle with Uniswap one should create additional contract (namely TWAP oracle)
+which will take snapshots of liquidity in Uniswap. This snapshots will be used for calculations.
+
 **Why does the price0CumulativeLast and price1CumulativeLast never decrement?**
 
 There is no need for them to decrement. Uniswap heavily relies on modular arithmetic and overflows are desired.

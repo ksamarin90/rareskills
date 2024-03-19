@@ -26,7 +26,7 @@ contract UniswapV2Pair is ERC20, ReentrancyGuard, IERC3156FlashLender {
     uint256 public price1CumulativeLast;
     uint256 public kLast;
 
-    uint256 public constant MINIMUM_LIQUIDITY = 10 ** 3;
+    uint256 public constant MINIMUM_LIQUIDITY = 1000;
 
     event Mint(address indexed sender, uint amount0, uint amount1);
     event Burn(address indexed sender, uint amount0, uint amount1, address indexed to);
@@ -40,9 +40,11 @@ contract UniswapV2Pair is ERC20, ReentrancyGuard, IERC3156FlashLender {
     );
     event Sync(uint256 reserve0, uint256 reserve1);
 
+    error INSUFFICIENT_LIQUIDITY_BURNED();
     error INSUFFICIENT_OUTPUT_AMOUNT();
     error INSUFFICIENT_INPUT_AMOUNT();
     error INSUFFICIENT_LIQUIDITY();
+    error INSUFFICIENT_AMOUNT();
     error FLASH_LOAN_FAILED();
     error INVALID_PAIR();
     error EXPIRED();
@@ -124,7 +126,6 @@ contract UniswapV2Pair is ERC20, ReentrancyGuard, IERC3156FlashLender {
         uint256 deadline
     )
         external
-        virtual
         checkDeadline(deadline)
         returns (uint256 amountA, uint256 amountB, uint256 liquidity)
     {
@@ -132,6 +133,20 @@ contract UniswapV2Pair is ERC20, ReentrancyGuard, IERC3156FlashLender {
         SafeTransferLib.safeTransferFrom(tokenA, msg.sender, token0, amountA);
         SafeTransferLib.safeTransferFrom(tokenB, msg.sender, token1, amountB);
         liquidity = mint_(to);
+    }
+
+    function removeLiquidity(
+        address tokenA,
+        uint liquidity,
+        uint amountAMin,
+        uint amountBMin,
+        address to,
+        uint deadline
+    ) external checkDeadline(deadline) returns (uint amountA, uint amountB) {
+        SafeTransferLib.safeTransferFrom(address(this), msg.sender, address(this), liquidity);
+        (uint amount0, uint amount1) = burn_(to);
+        (amountA, amountB) = tokenA == token0 ? (amount0, amount1) : (amount1, amount0);
+        if (amountA < amountAMin || amountB < amountBMin) revert INSUFFICIENT_AMOUNT();
     }
 
     function swapExactFrom(
@@ -239,8 +254,8 @@ contract UniswapV2Pair is ERC20, ReentrancyGuard, IERC3156FlashLender {
                 (amountA, amountB) = (amountADesired, amountBOptimal);
             } else {
                 uint256 amountAOptimal = _quote(amountBDesired, reserveB, reserveA);
-                assert(amountAOptimal <= amountADesired);
-                if (amountAOptimal < amountAMin) revert INSUFFICIENT_INPUT_AMOUNT();
+                if (amountAOptimal > amountADesired || amountAOptimal < amountAMin)
+                    revert INSUFFICIENT_INPUT_AMOUNT();
                 (amountA, amountB) = (amountAOptimal, amountBDesired);
             }
         }
@@ -264,28 +279,55 @@ contract UniswapV2Pair is ERC20, ReentrancyGuard, IERC3156FlashLender {
         uint amount1 = balance1.rawSub(_reserve1);
 
         bool feeOn = _mintFee(_reserve0, _reserve1);
-        uint256 _totalSupply = totalSupply(); // gas savings, must be defined here since totalSupply can update in _mintFee
+        uint256 _totalSupply = totalSupply();
         if (_totalSupply == 0) {
             liquidity = FixedPointMathLib.sqrt(amount0.rawMul(amount1)).rawSub(MINIMUM_LIQUIDITY);
-            _mint(address(0), MINIMUM_LIQUIDITY); // permanently lock the first MINIMUM_LIQUIDITY tokens
+            _mint(address(0), MINIMUM_LIQUIDITY);
         } else {
             liquidity = FixedPointMathLib.min(
-                amount0.rawMul(_totalSupply) / _reserve0,
-                amount1.rawMul(_totalSupply) / _reserve1
+                amount0.rawMul(_totalSupply).rawDiv(_reserve0),
+                amount1.rawMul(_totalSupply).rawDiv(_reserve1)
             );
         }
-        require(liquidity > 0, "UniswapV2: INSUFFICIENT_LIQUIDITY_MINTED");
+        if (liquidity == 0) revert INSUFFICIENT_LIQUIDITY();
         _mint(to, liquidity);
 
         _updateState(balance0, balance1, _reserve0, _reserve1);
-        if (feeOn) kLast = uint(reserve0).rawMul(reserve1); // reserve0 and reserve1 are up-to-date
+        if (feeOn) kLast = uint(reserve0).rawMul(reserve1);
         emit Mint(msg.sender, amount0, amount1);
+    }
+
+    function burn_(address to) internal returns (uint amount0, uint amount1) {
+        (uint256 _reserve0, uint256 _reserve1, address _token0, address _token1) = (
+            reserve0,
+            reserve1,
+            token0,
+            token1
+        );
+        uint balance0 = ERC20(_token0).balanceOf(address(this));
+        uint balance1 = ERC20(_token1).balanceOf(address(this));
+        uint liquidity = balanceOf(address(this));
+
+        bool feeOn = _mintFee(_reserve0, _reserve1);
+        uint _totalSupply = totalSupply();
+        amount0 = liquidity.rawMul(balance0).rawDiv(_totalSupply);
+        amount1 = liquidity.rawMul(balance1).rawDiv(_totalSupply);
+        if (amount0 == 0 || amount1 == 0) revert INSUFFICIENT_LIQUIDITY_BURNED();
+        _burn(address(this), liquidity);
+        SafeTransferLib.safeTransfer(_token0, to, amount0);
+        SafeTransferLib.safeTransfer(_token1, to, amount1);
+        balance0 = ERC20(_token0).balanceOf(address(this));
+        balance1 = ERC20(_token1).balanceOf(address(this));
+
+        _updateState(balance0, balance1, _reserve0, _reserve1);
+        if (feeOn) kLast = reserve0.rawMul(reserve1);
+        emit Burn(msg.sender, amount0, amount1, to);
     }
 
     function _mintFee(uint256 _reserve0, uint256 _reserve1) private returns (bool feeOn) {
         address feeTo = UniswapV2Factory(factory).feeTo();
         feeOn = feeTo != address(0);
-        uint _kLast = kLast; // gas savings
+        uint _kLast = kLast;
         if (feeOn) {
             if (_kLast != 0) {
                 uint rootK = FixedPointMathLib.sqrt(uint(_reserve0).rawMul(_reserve1));
