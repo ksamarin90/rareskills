@@ -1,0 +1,8 @@
+deployer: '0x28201654dA15753D48F8ef5b0093757231008ADB'
+sender: ['0x28201654dA15753D48F8ef5b0093757231008ADB']
+testMode: property
+allContracts: true
+testLimit: 200000
+seqLen: 200
+filterBlacklist: false
+filterFunctions: ['DexWrapper.swap(bool,uint256)', 'ERC20Test.approve(address,uint256)']
