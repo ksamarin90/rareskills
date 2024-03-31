@@ -13,3 +13,6 @@ typechain-types
 coverage
 coverage.json
 solidity-riddles
+lib
+out
+crytic-export
