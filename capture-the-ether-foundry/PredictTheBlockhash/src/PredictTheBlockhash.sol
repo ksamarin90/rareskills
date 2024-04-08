@@ -8,10 +8,7 @@ contract PredictTheBlockhash {
     uint256 settlementBlockNumber;
 
     constructor() payable {
-        require(
-            msg.value == 1 ether,
-            "Requires 1 ether to create this contract"
-        );
+        require(msg.value == 1 ether, "Requires 1 ether to create this contract");
     }
 
     function isComplete() public view returns (bool) {
@@ -29,16 +26,13 @@ contract PredictTheBlockhash {
 
     function settle() public {
         require(msg.sender == guesser, "Requires msg.sender to be guesser");
-        require(
-            block.number > settlementBlockNumber,
-            "Requires block.number to be more than settlementBlockNumber"
-        );
+        require(block.number > settlementBlockNumber, "Requires block.number to be more than settlementBlockNumber");
 
         bytes32 answer = blockhash(settlementBlockNumber);
 
         guesser = address(0);
         if (guess == answer) {
-            (bool ok, ) = msg.sender.call{value: 2 ether}("");
+            (bool ok,) = msg.sender.call{value: 2 ether}("");
             require(ok, "Transfer to msg.sender failed");
         }
     }

