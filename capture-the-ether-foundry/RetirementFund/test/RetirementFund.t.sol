@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.13;
+pragma solidity 0.8.13;
 
 import "forge-std/Test.sol";
 import "../src/RetirementFund.sol";
@@ -20,6 +20,10 @@ contract RetirementFundTest is Test {
         // Use the instance retirementFund and exploitContract
 
         // Put your solution here
+
+        vm.warp(block.timestamp + 520 weeks);
+        exploitContract.kaputt();
+        retirementFund.withdraw();
 
         _checkSolved();
     }
